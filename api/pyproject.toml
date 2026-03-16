@@ -1,0 +1,14 @@
+[project]
+name = "dakota-enrichment-service"
+version = "1.0"
+description = "Synthetic enrichment service for Dakota Analytics data pipeline"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "requests",
+    "python-dotenv"
+]
+
+[tool.uv]
+package = false

@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: monthly_energy_summary
+    description: "Analytics-ready monthly summary by period, state, and sector."
+    columns:
+      - name: period
+        tests:
+          - not_null
+
+      - name: state_id
+        tests:
+          - not_null
+
+      - name: sector_id
+        tests:
+          - not_null
+
+      - name: total_sales
+        tests:
+          - not_null

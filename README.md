@@ -1,156 +1,196 @@
-# Dakota Analytics - Data Engineering Technical Assessment
+# Dakota Analytics - Energy Data Pipeline
 
-## Overview
+## Problem Statement
 
-Build an end-to-end data pipeline that ingests source data, enriches it with synthetic data, transforms it using dbt, and produces analytical reports. Using AI tooling is fine, just be professional.
+Energy market data is available through public sources like the U.S. Energy Information Administration (EIA) API, but the raw data is not immediately ready for analysis. It often needs to be enriched, structured, validated, and transformed before it can be used to generate meaningful insights.
 
-## The Challenge
+The goal of this project was to design a small but realistic data pipeline that can automatically ingest energy data, enrich it with additional context, transform it into analytics-ready datasets, and produce a simple analytical report. The system should also be reproducible and easy to run locally.
 
-![Architecture Diagram](data-engineer-applicant.png)
+## Solution Overview
 
-Implement a production-ready data pipeline with these components:
+To solve this problem, I built an end-to-end data pipeline that combines several common data engineering components. This project implements an end-to-end data pipeline for ingesting, enriching, transforming, and analyzing energy market data.
 
-### 1. FastAPI Data Service (20 points)
-Create a FastAPI application that generates synthetic enrichment data relevant to energy analytics.
-- Use `uv` for dependency management
-- Design and implement useful enrichment data schemas
-- Containerize the service
-- See [api/README.md](api/README.md)
+The pipeline retrieves energy data from the EIA API using a Python ingestion script. Each record is then enriched through a lightweight FastAPI service that generates additional contextual signals.
 
-### 2. Data Ingestion (20 points)
-Build clients to fetch data from:
-- A source of your choice
-- OR (not and) EIA API (https://www.eia.gov/opendata/) - register for free API key
-- Your FastAPI enrichment service
+The enriched data is stored in PostgreSQL and transformed using dbt to create analytics-ready models. dbt tests are also used to validate data quality.
 
-Implement error handling, retries, and logging.
-See [ingestion/README.md](ingestion/README.md)
+A Prefect workflow orchestrates the entire process, ensuring the steps run in the correct order — ingestion, transformation, testing, and report generation.
 
-### 3. Orchestration (20 points)
-Choose and implement a workflow orchestrator (Dagster, Airflow, Prefect, etc.)
-- Daily batch ingestion from EIA
-- Frequent ingestion from FastAPI service
-- dbt transformation execution
-- Data quality checks
-- Report generation
-- Error handling and monitoring
+Finally, a Jupyter notebook is used to explore and visualize the resulting dataset.
 
-See [orchestration/README.md](orchestration/README.md)
+The system is containerized using Docker and automated through a Makefile so the entire pipeline can be reproduced and executed locally with a few simple commands.
 
-### 4. Database Design (15 points)
-Design a Database schema for:
-- Raw data storage
-- Transformed analytics tables
-- Time-series considerations if any
+## System Components & Data Pipeline Flow
 
-Include initialization scripts and ER diagram.
-See [database/README.md](database/README.md)
+1.	FastAPI Service: This provides an enrichment API that generates additional contextual signals for energy records
+2.	Prefect Orchestration Flow (pipeline.py): This is used to manage pipeline execution
+3.	Python Ingestion Script (fetch_data.py) retrieves energy data from the EIA API
+4.	Retrieved records are enriched via the FastAPI service
+5.	Enriched data is stored in PostgreSQL raw tables
+6.	dbt models transform the data into analytics-ready datasets
+7.	A Jupyter notebook performs analysis and visualization
 
-### 5. dbt Transformations (20 points)
-Implement layered dbt models:
-- Organize in chosen architecture pattern
-- Include data quality tests
-- Document models
-- Use incremental models where appropriate
+Steps 1–6 of the pipeline can be executed using a single command via the Makefile, ensuring the pipeline can be reproduced easily in a fresh environment.
 
-See [dbt/README.md](dbt/README.md)
-
-### 6. Reporting (10 points)
-Generate automated reports of your choice:
-- Excel dashboard with metrics and charts
-- Jupyter notebook with exploratory analysis
-- PDF executive summary
-- Doesn't have to be all, just relevant
-
-See [reports/README.md](reports/README.md)
-
-## Deliverables
-
-### Required Structure
-
+## Project Structure
 ```
-your-fork/
-├── README.md              # Update with setup instructions
+dakota-technical-assessment/
+├── README.md              # Setup instructions
 ├── docker-compose.yml     # All services defined
-├── run.sh / run.bat       # Startup script (see below)
+├── run.bat       # Startup script 
 ├── .env.example          # Environment variables template
+├── Makefile              
 │
 ├── api/                  # FastAPI service
 ├── ingestion/            # Data ingestion clients
-├── orchestration/        # Your orchestrator implementation
+├── orchestration/        # Prefect orchestrator flow
 ├── database/             # Schema and init scripts
 ├── dbt/                  # dbt project
-├── reports/              # Report generation
+├── reports/              # Analytical notebook
 │
-├── docs/                 # YOUR DOCUMENTATION
+├── docs/                 #  DOCUMENTATION
 │   ├── architecture.md   # System architecture and design
 │   ├── decisions.md      # Technical decisions and rationale
 │   └── er_diagram.png    # Database schema diagram
 │
-└── tests/                # Your tests
+└── tests/                #  tests
 
 ```
 
-### Documentation (in `/docs/`)
+## Prerequisites
+The following tools must be installed:
+- Python 3.11 
+- Docker Desktop
+- Make  (for running automation commands via Makefile)
 
-Create these files explaining your work:
+Note: The project was validated using a local virtual environment and Docker-based services. Python 3.11 is recommended for best package compatibility.
 
-**`docs/architecture.md`**
-- System design overview
-- Technology choices and why
-- Data flow
-- Scalability considerations
+## Reproducibility
+After cloning the repository, the full pipeline can be executed with:
 
-**`docs/decisions.md`**
-- Key technical decisions
-- Trade-offs considered
-- Alternative approaches
-- Rationale for choices
+```bash
+make setup
+make run
+make test
+make report
+make clean
+```
 
-### Startup Script Requirements
+This will:
+- Install required dependencies
+- Start required Docker services
+- Execute the Prefect pipeline
+- Run dbt transformations and tests
+- Stop services
 
-**Create a script (e.g., `run.sh` for Unix/Mac or `run.bat` for Windows) that:**
+## Setup
+Clone the repository and install dependencies:
+Run:
+```bash
+make setup
+```
 
-1. Sets up the environment (dependencies, `.env` file, builds containers)
-2. Starts all services via docker-compose
-3. Runs the pipeline end-to-end
-4. Generates reports
-5. Provides clear output/logging of what's happening
+This command installs all required Python dependencies defined in requirements.txt
 
-The script should be idempotent and handle:
-- First-time setup
-- Subsequent runs
-- Basic error handling
+## Running the Pipeline
 
-We will evaluate your solution by running this script in a clean environment. Include usage instructions in your README.
+Execute the full pipeline with:
+```bash
+make run
+```
 
-## Evaluation Criteria
+This command runs the pipeline startup script and performs the following steps:
+- Starts Docker services (PostgreSQL and FastAPI enrichment API)
+- Executes the Prefect orchestration flow
+- Retrieves energy data from the EIA API
+- Enriches records using the FastAPI service
+- Loads enriched records into the PostgreSQL raw table
+- Executes dbt transformations
+- Runs dbt data quality tests
 
-- **Technical Excellence (40%)** - Code quality, error handling, testing, performance
-- **Architecture & Design (30%)** - Tool choices, database design, scalability, separation of concerns
-- **Documentation (20%)** - Clarity, completeness, decision rationale
-- **Innovation (10%)** - Creative solutions, best practices, additional value
+Example successful output:
 
-## Time Expectation
+Done. PASS=9 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=9
+=====================================
+Pipeline completed successfully
+====================================
 
-Approximately 4-6 hours. Focus on quality and demonstrating best practices.
+## Running Tests
 
-## Submission
+Python unit tests validate core ingestion logic.
+Run tests with:
+```bash
+make test
+```
 
-1. Fork this repository
-2. Implement your solution
-3. Test that your startup script works in a clean environment
-4. Email your repository URL to: **technical-assessment@dakotaanalytics.com**
+This executes:
+- Python unit tests in the tests/ directory
+- dbt data tests validating analytics models
 
-Include in your email:
-- Your name
-- Repository link (should be public)
-- Brief summary of your approach
+## Viewing the Report
 
-## Questions?
+The analytical report can be opened with:
+make report
 
-For clarification on requirements only: **technical-assessment@dakotaanalytics.com**
+This command points to the analytical notebook located in:
+reports/energy_analysis.ipynb
 
-We can clarify requirements but won't help with implementation decisions - that's what we're evaluating!
+The Jupyter notebook contains the exploratory analysis and visualizations built on top of the analytics dataset.  
+The notebook includes executed outputs and can be opened directly to review the results.
 
----
+## Cleaning the Environment
+To stop and remove running Docker services
+```bash
+make clean
+```
+This stops PostgreSQL and the FastAPI service containers.
+
+## API Service
+
+The FastAPI service provides an enrichment endpoint used by the ingestion pipeline to generate additional contextual metrics.
+
+Health endpoint:
+http://localhost:8000/health
+
+Example response:
+{
+  "status": "healthy",
+  "service": "dakota-enrichment-api",
+  "version": "1.0"
+}
+
+The enrichment endpoint used by the ingestion pipeline is:
+
+http://localhost:8000/enrichment
+
+
+## Documentation
+Additional documentation is available in the docs/ directory:
+
+architecture.md  – System architecture and data flow
+decisions.md     – Key technical decisions and trade-offs
+er_diagram.png   – Database schema diagram
+
+## Summary
+This project demonstrates a modern data engineering workflow combining:
+- Python-based ingestion
+- PostgreSQL storage
+- dbt transformation layer
+- containerized infrastructure
+- automated pipeline execution
+
+The system is designed to be modular, reproducible, and easy to run, providing a clear example of a production-style data pipeline.
+A Jupyter notebook is included for exploratory analysis and visualization of the final analytics dataset.
+
+##Benefits
+
+This approach provides several practical benefits.
+
+First, the pipeline is modular, with clear separation between ingestion, enrichment, storage, transformation, and reporting. Each component can be modified or extended independently without impacting the rest of the system.
+
+Second, the use of Prefect orchestration ensures that pipeline tasks run in the correct order and can automatically retry if a step fails. This improves reliability compared to running scripts manually.
+
+Third, dbt transformations and tests help ensure that the analytical datasets are structured and validated before they are used for analysis.
+
+Finally, the project is designed to be fully reproducible. With Docker services and Makefile automation, the entire pipeline can be executed locally with only a few commands, making it easy to set up and run in a new environment.
+

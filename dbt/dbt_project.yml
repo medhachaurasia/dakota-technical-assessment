@@ -1,0 +1,21 @@
+name: 'dakota_technical_assessment'
+version: '1.0.0'
+config-version: 2
+
+profile: 'dakota_technical_assessment'
+
+model-paths: ["models"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+
+models:
+  dakota_technical_assessment:
+    staging:
+      +schema: staging
+      +materialized: view
+
+    marts:
+      +schema: analytics
+      +materialized: table

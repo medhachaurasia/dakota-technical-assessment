@@ -1,17 +1,13 @@
 version: '3.8'
 
-# This is a starter template. Modify and extend based on your implementation.
-# The code below is just for example, we expect you to modify it.
-
 services:
-  # PostgreSQL Database or other database
   postgres:
     image: postgres:15-alpine
     container_name: dakota_postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-energy_analytics}
-      POSTGRES_USER: ${POSTGRES_USER:-dakota_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -20,21 +16,26 @@ services:
     networks:
       - dakota_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dakota_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-energy_analytics}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Add your services here:
-  # - FastAPI service
-  # - Orchestrator
-  # - dbt
-  # - Jupyter (optional for notebooks)
-  # etc.
-
-networks:
-  dakota_network:
-    driver: bridge
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: dakota_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dakota_network
 
 volumes:
   postgres_data:
+
+networks:
+  dakota_network:

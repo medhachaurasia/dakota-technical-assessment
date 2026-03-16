@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_energy_enriched_data
+    description: "Staging model for raw enriched energy ingestion data."
+    columns:
+      - name: id
+        description: "Surrogate key for raw ingested records."
+        tests:
+          - not_null
+          - unique
+
+      - name: period
+        description: "Monthly reporting period stored as a date."
+        tests:
+          - not_null
+
+      - name: state_id
+        description: "State identifier from the EIA dataset."
+        tests:
+          - not_null
+
+      - name: sector_id
+        description: "Sector identifier from the EIA dataset."
+        tests:
+          - not_null
